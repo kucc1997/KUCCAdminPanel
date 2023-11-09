@@ -1,12 +1,61 @@
-import {List, TextInput, Datagrid, Create, SimpleForm, required, RadioButtonGroupInput} from 'react-admin';
+import {List, TextInput, Datagrid, Create, SimpleForm, required, RadioButtonGroupInput, useNotify} from 'react-admin';
 import {SelectInput} from 'react-admin';
 import {Box} from '@mui/material';
-import React from 'react';
+import {ImageInput, ImageField} from 'react-admin';
+import React, {useEffect, useState} from 'react';
 
 const UserCreate = () => {
+    const validateUserCreation = (values: any) => {
+        const errors = {};
+        if (!values.fullName) {
+            errors["fullName"] = "Missing Full Name";
+        }
+
+        if (!values.primaryEmail) {
+            errors["primaryEmail"] = "Missing Primary Email!";
+        }
+
+        if (!values.password) {
+            errors["password"] = "Missing Password!";
+        }
+
+        if (!values.phoneNumber) {
+            errors["phoneNumber"] = "Missing Phone Number!";
+        }
+
+        if (!values.gender) {
+            errors["gender"] = "Missing Gender!";
+        }
+
+
+        if (!values.userType) {
+            errors["userType"] = "Missing User Role!";
+        }
+
+        if (!values.userRole) {
+            errors["userRole"] = "Missing User Role!";
+        } else if (values.userRole === "Verified User" || values.userRole === "Manager" || values.userRole === "Admin") {
+            if (!values.batch) {
+                errors["batch"] = "Missing User Role!";
+            }
+
+            if (!values.faculty) {
+                errors["faculty"] = "Missing faculty!";
+            }
+
+            if (!values.secondaryEmail) {
+                errors["secondaryEmail"] = "Missing Secondary Email!";
+            }
+
+            if (!values.profilePicture) {
+                errors["profilePicture"] = "Missing Profile Picture";
+            }
+        }
+        return errors
+    };
     return <Box width={"100%"}>
         <Create>
-            <SimpleForm>
+            <SimpleForm validate={validateUserCreation}>
                 <Box display="flex" flexDirection="column" width="100%">
                     <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
                         <TextInput
@@ -74,19 +123,27 @@ const UserCreate = () => {
                             <SelectInput source="userType" label="User Type" choices={[
                                 {id: 'KUStudent', name: 'KU Student'},
                                 {id: 'DOCSEAlumni', name: 'DOCSE Alumni'},
+                                {id: 'DOCSEStudent', name: 'DOCSE Student'},
+                                {id: 'KUCCGeneral Member', name: 'KUCC General Member'},
+                                {id: 'KUCCPresident', name: 'KUCC President'},
+                                {id: 'KUCCMember', name: 'KUCC General Secretary'},
+                                {id: 'KUCCTreasurer', name: 'KUCC Treasurer'},
+                                {id: 'KUCCVice President', name: 'KUCC Vice President'},
+                                {id: 'KUCCClubSecretary', name: 'KUCC Club Secretary'},
+                                {id: 'KUCCExecutive Member', name: 'KUCC Executive Member'},
                             ]} fullWidth />
                         </Box>
                     </Box>
                     <Box display={"flex"} flexDirection="column" alignSelf={"start"} flex={1}>
                         <Box flex={1}>
-                            <RadioButtonGroupInput source="genders" choices={[
+                            <RadioButtonGroupInput source="gender" choices={[
                                 {id: 'Male', name: 'Male'},
                                 {id: 'Female', name: 'Female'},
                                 {id: 'Non Binary', name: 'Non Binary'},
                             ]} validate={required()} fullWidth />
                         </Box>
                         <Box flex={1}>
-                            <RadioButtonGroupInput source="roles" choices={[
+                            <RadioButtonGroupInput source="userRole" label="User Role" choices={[
                                 {id: 'Admin', name: 'Admin'},// IF Admin clicks on this then he would need a secondary email too
                                 {id: 'Manager', name: 'Manager'},// IF Admin clicks on this then he would need a secondary email too
                                 {id: 'Verified User', name: 'Verified User'}, // IF Admin clicks on this then he would need a secondary email too
@@ -94,6 +151,10 @@ const UserCreate = () => {
                             ]} validate={required()} fullWidth />
                         </Box>
                     </Box>
+
+                    <ImageInput source="profilePicture" label="Profile Picture">
+                        <ImageField source="src" title="title" />
+                    </ImageInput>
                 </Box>
             </SimpleForm>
         </Create>

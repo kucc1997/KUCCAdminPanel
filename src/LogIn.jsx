@@ -15,25 +15,40 @@ import KUCCLogo from './assets/kucc.png'
 
 
 export default function SignIn() {
+    const login = useLogin();
+    const notify = useNotify();
+
     const handleSubmit = (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        console.log({
-            email: data.get('email'),
-            password: data.get('password'),
-        });
+
+        const email = data.get('email');
+        const password = data.get('password');
+
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!emailRegex.test(email)) {
+            notify("Invalid email address!", {type: "error"});
+        } else {
+            console.log({
+                email: email,
+                password: password,
+            });
+            // Email is valid
+            login({email, password}).catch((e) => {
+                notify(e, {type: "error"});
+            });
+
+        }
     };
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const login = useLogin();
-    const notify = useNotify();
+
     return (
         <Container component="main" maxWidth="xs">
             <CssBaseline />
             <Box
+                mt={0}
                 sx={{
-                    marginTop: 8,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -42,7 +57,7 @@ export default function SignIn() {
                 <Avatar sx={{m: 1, bgcolor: "white", height: 200, width: 200, padding: 3}} src={KUCCLogo}>
                 </Avatar>
                 <Typography component="h1" variant="h5" mt="0.5em">
-                    Sup!, Please Log In
+                    Sup! Please Log In
                 </Typography>
                 <Box component="form" onSubmit={handleSubmit} noValidate sx={{mt: 1}} textAlign="start">
                     <TextField
@@ -65,17 +80,20 @@ export default function SignIn() {
                         id="password"
                         autoComplete="current-password"
                     />
-                    <FormControlLabel
-                        control={<Checkbox value="remember" color="primary" />}
-                        label="Remember me"
-                    />
+                    <Box mt={"0.6em"}>
+                        <FormControlLabel
+                            control={<Checkbox value="remember" color="primary" />}
+                            label="Remember me"
+                        />
+                    </Box>
+
                     <Button
                         type="submit"
                         fullWidth
                         variant="contained"
                         sx={{mt: 3, mb: 2}}
                     >
-                        Sign In
+                        Log In
                     </Button>
                 </Box>
             </Box>

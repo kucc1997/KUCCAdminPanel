@@ -1,76 +1,145 @@
 import {gql} from "@apollo/client";
+import axios from "axios";
 import buildGraphQLProvider from 'ra-data-graphql-simple';
 const GRAPHQL_URI = "http://localhost:8080/graphql";
+
+const uploadImage = (file) => {
+    const formData = new FormData();
+
+    formData.append('file', file);
+    let x = axios.post(uploadUrl, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }).then((url) => {
+
+    }).catch((err) => {
+
+    })
+}
 
 const myBuildQuery = (fetchType, resource, params) => {
     console.log(`${fetchType} for ${resource}`);
     if (fetchType === "CREATE") {
         const data = params.data;
-        const batch = params.data.batch;
-        const faculty = params.data.faculty;
-        const isDraft = params.data.isDraft;
 
-        let schedule = {
-            ...data.schedule,
-        };
-        delete schedule.__typename;
-        for (let key in schedule) {
-            console.log(key);
-            if (Array.isArray(schedule[key])) {
-                schedule[key] = schedule[key].map((d) => {
-                    delete d.__typename;
-                    return d;
-                });
-            }
-        }
-        console.log(schedule);
-        const create_routine = gql`
-              fragment DayScheduleFields on SubjectSchedule {
-                subject
-                startTime
-                endTime
-              }
+        switch (resource) {
+            case "Routine":
+                const batch = params.data.batch;
+                const faculty = params.data.faculty;
+                const isDraft = params.data.isDraft;
 
-              mutation updateRoutine($batch :Int!, $faculty :String!, $schedule : InputDaySchedule!, $isDraft : Boolean!) {
-                routine {
-                  createRoutine(routine: {
-                    batch : $batch,
-                    faculty : $faculty,
-                    schedule : $schedule,
-                    isDraft : $isDraft
-                  }){
-                     id
-                     isDraft
-                     batch
-                     faculty
-                     schedule{
-                         sun { ...DayScheduleFields }
-                         mon { ...DayScheduleFields }
-                         tue { ...DayScheduleFields }
-                         wed { ...DayScheduleFields }
-                         thu { ...DayScheduleFields }
-                         fri { ...DayScheduleFields }
-                     }
-                  }
+                let schedule = {
+                    ...data.schedule,
+                };
+                delete schedule.__typename;
+                for (let key in schedule) {
+                    console.log(key);
+                    if (Array.isArray(schedule[key])) {
+                        schedule[key] = schedule[key].map((d) => {
+                            delete d.__typename;
+                            return d;
+                        });
+                    }
                 }
-              }`;
+                console.log(schedule);
+                const create_routine = gql`
+                fragment dayschedulefields on subjectschedule {
+                  subject
+                  starttime
+                  endtime
+                }
 
-        return {
-            query: create_routine,
-            variables: {
-                batch,
-                faculty,
-                schedule,
-                isDraft
-            },
-            parseResponse: response => {
+                mutation createroutine($batch :int!, $faculty :string!, $schedule : inputdayschedule!, $isdraft : boolean!) {
+                  routine {
+                    createroutine(routine: {
+                      batch : $batch,
+                      faculty : $faculty,
+                      schedule : $schedule,
+                      isdraft : $isdraft
+                    }){
+                       id
+                       isdraft
+                       batch
+                       faculty
+                       schedule{
+                           sun { ...dayschedulefields }
+                           mon { ...dayschedulefields }
+                           tue { ...dayschedulefields }
+                           wed { ...dayschedulefields }
+                           thu { ...dayschedulefields }
+                           fri { ...dayschedulefields }
+                       }
+                    }
+                  }
+                }`;
                 return {
-                    data: {
-                        ...response.data.routine.createRoutine
+                    query: create_routine,
+                    variables: {
+                        batch,
+                        faculty,
+                        schedule,
+                        isDraft
+                    },
+                    parseResponse: response => {
+                        return {
+                            data: {
+                                ...response.data.routine.createRoutine
+                            },
+                        };
                     },
                 };
-            },
-        };
+            case "User":
+                const create_user = gql`
+                mutation createUser(
+                    $batch :int!, $faculty :string!, $schedule : inputdayschedule!, $isdraft : boolean!) {
+                  user {
+                    createUser(newUser: {
+                      fullName : $fullName,
+                      primaryEmail : $primaryEmail,
+                      password : $password,
+                    }){
+                       id
+                       isdraft
+                       batch
+                       faculty
+                       schedule{
+                           sun { ...dayschedulefields }
+                           mon { ...dayschedulefields }
+                           tue { ...dayschedulefields }
+                           wed { ...dayschedulefields }
+                           thu { ...dayschedulefields }
+                           fri { ...dayschedulefields }
+                       }
+                    }
+                  }
+                }`;
+
+                console.log(data);
+                return {
+                    query: create_user,
+                    variables: {
+                        fullName: data.fullName,
+                        primaryEmail: data.primaryEmail,
+                        secondaryEmail: data.secondaryEmail,
+                        phoneNumber: data.phoneNumber,
+                        password: data.password,
+                        batch: data.batch,
+                        faculty: data.faculty,
+                        userType: data.userType,
+                        gender: data.gender,
+                        userRole: data.userRole,
+                        profilePicture: data.profilePicture,
+                    },
+                    parseResponse: response => {
+                        return {
+                            data: {
+                                ...response.data.routine.createRoutine
+                            },
+                        };
+                    },
+                };
+        }
     }
     else if (fetchType === 'GET_LIST') {
         let page = params.pagination.page;
