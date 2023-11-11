@@ -1,9 +1,42 @@
-import {List, TextInput, Datagrid, Create, SimpleForm, required, RadioButtonGroupInput, useNotify} from 'react-admin';
+import {List, TextInput, Datagrid, Create, SimpleForm, required, RadioButtonGroupInput, useNotify, NumberInput} from 'react-admin';
 import {SelectInput} from 'react-admin';
 import {Box} from '@mui/material';
 import {ImageInput, ImageField} from 'react-admin';
 import React, {useEffect, useState} from 'react';
+import axios from "axios";
 
+const uploadImage = (file: File) => {
+    return new Promise((res, rej) => {
+
+        let access_token = localStorage.getItem("access_token");
+        if (!access_token) {
+            console.error("Access token not available");
+            rej("Access token not available");
+        }
+
+        console.log("The downloaded file is ");
+        console.log(file);
+        let upload_url = "http://localhost:8080/upload";
+        let file_name = file.name;
+        const formData = new FormData();
+        formData.append('file', file);
+
+        console.log("The file is ");
+        console.log(file);
+
+        axios.post(upload_url, formData, {
+            headers: {
+                "Authorization": access_token,
+                "Content-Type": 'multipart/form-data',
+                "Content-Disposition": `attachment; filename="${file_name}"`
+            },
+        }).then((d) => {
+            res(d.data);
+        }).catch((e) => {
+            rej(e);
+        });
+    });
+}
 const UserCreate = () => {
     const validateUserCreation = (values: any) => {
         const errors = {};
@@ -34,9 +67,9 @@ const UserCreate = () => {
 
         if (!values.userRole) {
             errors["userRole"] = "Missing User Role!";
-        } else if (values.userRole === "Verified User" || values.userRole === "Manager" || values.userRole === "Admin") {
+        } else if (values.userRole === "VERIFIEDUSER" || values.userRole === "MANAGER" || values.userRole === "ADMIN") {
             if (!values.batch) {
-                errors["batch"] = "Missing User Role!";
+                errors["batch"] = "Missing Batch";
             }
 
             if (!values.faculty) {
@@ -47,14 +80,21 @@ const UserCreate = () => {
                 errors["secondaryEmail"] = "Missing Secondary Email!";
             }
 
-            if (!values.profilePicture) {
-                errors["profilePicture"] = "Missing Profile Picture";
+            if (!values.imageUrl) {
+                errors["imageUrl"] = "Missing Profile Picture";
             }
         }
         return errors
     };
+
+    const transformData = async (data: any) => {
+        if (data.imageUrl) {
+            data.imageUrl = await uploadImage(data.imageUrl.rawFile);
+        }
+        return data;
+    }
     return <Box width={"100%"}>
-        <Create>
+        <Create transform={transformData}>
             <SimpleForm validate={validateUserCreation}>
                 <Box display="flex" flexDirection="column" width="100%">
                     <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
@@ -105,8 +145,9 @@ const UserCreate = () => {
                     </Box>
                     <Box flex={1} display={"flex"} flexDirection="row">
                         <Box pr="0.2em" flex={1}>
-                            <TextInput
-                                variant='outlined'
+                            <NumberInput
+                                max={2030}
+                                min={2000}
                                 label="Batch"
                                 source="batch"
                                 fullWidth
@@ -114,45 +155,46 @@ const UserCreate = () => {
                         </Box>
                         <Box pl="0.2em" flex={1}>
                             <SelectInput source="faculty" label="Faculty" choices={[
-                                {id: 'ComputerScience', name: 'Computer Science'},
-                                {id: 'ComputerEngineer', name: 'Computer Engineering'},
-                                {id: 'ArtificialIntelligence', name: 'Artificial Intelligence'},
+                                {id: 'COMPUTERSCIENCE', name: 'Computer Science'},
+                                {id: 'COMPUTERENGINEERING', name: 'Computer Engineering'},
+                                {id: 'ARTIFICIALINTELLIGENCE', name: 'Artificial Intelligence'},
                             ]} fullWidth />
                         </Box>
                         <Box pl="0.2em" flex={1}>
                             <SelectInput source="userType" label="User Type" choices={[
-                                {id: 'KUStudent', name: 'KU Student'},
-                                {id: 'DOCSEAlumni', name: 'DOCSE Alumni'},
-                                {id: 'DOCSEStudent', name: 'DOCSE Student'},
-                                {id: 'KUCCGeneral Member', name: 'KUCC General Member'},
-                                {id: 'KUCCPresident', name: 'KUCC President'},
-                                {id: 'KUCCMember', name: 'KUCC General Secretary'},
-                                {id: 'KUCCTreasurer', name: 'KUCC Treasurer'},
-                                {id: 'KUCCVice President', name: 'KUCC Vice President'},
-                                {id: 'KUCCClubSecretary', name: 'KUCC Club Secretary'},
-                                {id: 'KUCCExecutive Member', name: 'KUCC Executive Member'},
+                                {id: 'KUSTUDENT', name: 'KU Student'},
+                                {id: 'DOCSEALUMNI', name: 'DOCSE Alumni'},
+                                {id: 'DOCSESTUDENT', name: 'DOCSE Student'},
+                                {id: 'KUCCGENERALMEMBER', name: 'KUCC General Member'},
+                                {id: 'KUCCPRESIDENT', name: 'KUCC President'},
+                                {id: 'KUCCTREASURER', name: 'KUCC Treasurer'},
+                                {id: 'KUCCMEMBER', name: 'KUCC General Secretary'},
+                                {id: 'KUCCVICEPRESIDENT', name: 'KUCC Vice President'},
+                                {id: 'KUCCGENERALSECRETARY', name: 'KUCC General Secretary'},
+                                {id: 'KUCCCLUBSECRETARY', name: 'KUCC Club Secretary'},
+                                {id: 'KUCCEXECUTIVEMEMBER', name: 'KUCC Executive Member'},
                             ]} fullWidth />
                         </Box>
                     </Box>
                     <Box display={"flex"} flexDirection="column" alignSelf={"start"} flex={1}>
                         <Box flex={1}>
                             <RadioButtonGroupInput source="gender" choices={[
-                                {id: 'Male', name: 'Male'},
-                                {id: 'Female', name: 'Female'},
-                                {id: 'Non Binary', name: 'Non Binary'},
+                                {id: 'MALE', name: 'Male'},
+                                {id: 'FEMALE', name: 'Female'},
+                                {id: 'UNSPECIFIED', name: 'Unspecified'},
                             ]} validate={required()} fullWidth />
                         </Box>
                         <Box flex={1}>
                             <RadioButtonGroupInput source="userRole" label="User Role" choices={[
-                                {id: 'Admin', name: 'Admin'},// IF Admin clicks on this then he would need a secondary email too
-                                {id: 'Manager', name: 'Manager'},// IF Admin clicks on this then he would need a secondary email too
-                                {id: 'Verified User', name: 'Verified User'}, // IF Admin clicks on this then he would need a secondary email too
-                                {id: 'Unverified User', name: 'Unverified User'},
+                                {id: 'ADMIN', name: 'Admin'},// IF Admin clicks on this then he would need a secondary email too
+                                {id: 'MANAGER', name: 'Manager'},// IF Admin clicks on this then he would need a secondary email too
+                                {id: 'VERIFIEDUSER', name: 'Verified User'}, // IF Admin clicks on this then he would need a secondary email too
+                                {id: 'UNVERIFIEDUSER', name: 'Unverified User'},
                             ]} validate={required()} fullWidth />
                         </Box>
                     </Box>
 
-                    <ImageInput source="profilePicture" label="Profile Picture">
+                    <ImageInput source="imageUrl" label="Profile Picture">
                         <ImageField source="src" title="title" />
                     </ImageInput>
                 </Box>

@@ -10,9 +10,8 @@ const authProvider: AuthProvider = {
                     email,
                     password
                 }
-            }).then((d) => {
-                localStorage.setItem('email', email);
-                console.log(d);
+            }).then(({data}) => {
+                localStorage.setItem('access_token', data);
                 res("Success")
             }).catch((err) => {
                 let status = err.response.status;
@@ -25,9 +24,9 @@ const authProvider: AuthProvider = {
         });
     },
     checkAuth: () =>
-        localStorage.getItem('email') ? Promise.resolve() : Promise.reject(),
+        localStorage.getItem('access_token') ? Promise.resolve() : Promise.reject(),
     logout: () => {
-        localStorage.removeItem('email');
+        localStorage.removeItem('access_token');
         return Promise.resolve();
     },
     checkError: (error) => Promise.resolve(),

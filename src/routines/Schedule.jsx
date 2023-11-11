@@ -1,7 +1,8 @@
 import * as React from 'react';
 import {
     useInput,
-    Button
+    Button,
+    useNotify
 } from 'react-admin';
 import {Box} from '@mui/material';
 import FullCalendar from "@fullcalendar/react";
@@ -12,6 +13,13 @@ import moment from "moment";
 import Dialog from '@mui/material/Dialog';
 import MUITextField from '@mui/material/TextField';
 import {nanoid} from 'nanoid'
+
+const MIN_TIME = 7;
+const MAX_TIME = 16;
+
+// Using this date because at 1 it starts from sunday
+// FullCalendar doesn't have only week data to work with, it has these dates to
+// so a workaround will be wrapper around this
 
 const getInitialDate = (weekDay) => `2023-01-0${weekDay + 1}`
 const daysOfWeek = ["sun", "mon", "tue", "wed", "thu", "fri"];
@@ -54,11 +62,11 @@ const parseToDailySchedules = (subjectSchedules) => {
 let randomID = () => nanoid();
 
 // TODO: Add null validation on saving / updating
-// TODO: Add support for deleting
 // TODO : Add a validation on the min time and max time coz if i were to drag a 2hr item below the bottom of 
 // the calendar then it's gonna show some issue  of overflowing more than constrained time
 const Schedule = ({source}) => {
     const {field} = useInput({source});
+    let notify = useNotify();
 
     const new_dialog_state = {
         isOpen: false,
@@ -156,26 +164,51 @@ const Schedule = ({source}) => {
     }
 
     const onScheduleDrop = (doneDrop) => {
-        let {id, start, end, title} = doneDrop.event;
+        let {id, start, end, title, } = doneDrop.event;
         let day = start.getDay();
+        let startTime = start.getHours();
+        let endTime = end.getHours();
 
-        updateDialogState({
-            isOpen: false,
-            id,
-            startTime: start,
-            endTime: end,
-            day,
-            title
-        });
+        if (startTime >= MIN_TIME && startTime <= MAX_TIME - 1 && endTime >= MIN_TIME + 1 && endTime <= MAX_TIME) {
+            updateDialogState({
+                isOpen: false,
+                id,
+                startTime: start,
+                endTime: end,
+                day,
+                title
+            });
+        } else {
+            notify("The schedule  you dropped is out of bounds", {type: "error"});
+            doneDrop.revert();
+            updateDialogState(new_dialog_state);
+
+        }
+
     }
     const onSaveButtonClick = () => {
-        updateDialogState({
-            ...dialogState,
-            isOpen: false,
-        });
+        let startTime = dialogState.startTime.getHours();
+        let endTime = dialogState.endTime.getHours();
+
+        if (startTime >= MIN_TIME && startTime <= MAX_TIME - 1 && endTime >= MIN_TIME + 1 && endTime <= MAX_TIME) {
+            updateDialogState({
+                ...dialogState,
+                isOpen: false,
+            });
+        } else if (startTime === endTime) {
+            notify("Start and End time can't be same ", {type: "error"});
+        } else {
+            notify("The time you gave is out of bounds", {type: "error"});
+            updateDialogState(new_dialog_state);
+        }
+
     }
 
-    const onButtonDeleteClick = () => {
+    const onDeleteButtonClick = () => {
+        let newSchedules = schedules.filter(obj => obj["id"] !== dialogState.id);
+        updateSchedules(newSchedules);
+        field.onChange(newSchedules.length === 0 ? null : parseToDailySchedules(newSchedules));
+        updateDialogState(new_dialog_state)
     }
 
     React.useEffect(() => {
@@ -203,8 +236,9 @@ const Schedule = ({source}) => {
                 eventOverlap={false}
                 allDaySlot={false}
                 events={schedules}
-                slotMinTime="7:00:00"
-                slotMaxTime="16:00:00"
+                minTime
+                slotMinTime={`${MIN_TIME}:00:00`}
+                slotMaxTime={`${MAX_TIME}:00:00`}
                 slotDuration="1:00:00"
                 selectable
                 editable
@@ -286,7 +320,6 @@ const Schedule = ({source}) => {
                                 } else {
                                     hour = parseInt(e.target.value);
                                 }
-
                                 newEndTime.setHours(hour);
                                 updateDialogState({
                                     ...dialogState,
@@ -302,7 +335,7 @@ const Schedule = ({source}) => {
                             <div>Save</div></Button>
                         {
                             dialogState.id ? <Button
-                                onClick={() => {}}
+                                onClick={onDeleteButtonClick}
                                 color='error'>
                                 <div>Delete</div></Button> : <></>
                         }

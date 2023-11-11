@@ -19,6 +19,7 @@ import UserCreat from './users/UserCreate';
 import UserCreate from './users/UserCreate';
 import authProvider from './authProvider';
 import LogIn from './LogIn';
+import UserEdit from './users/UsersEdit';
 
 
 
@@ -41,25 +42,30 @@ const App = () => {
 
     const lightTheme = themes.find(theme => theme.name === themeName)?.light;
     const darkTheme = themes.find(theme => theme.name === themeName)?.dark;
+    const [accessToken, setAccessToken] = useState(localStorage.getItem("access_token"));
+
+    const onLogin = () => {
+        setAccessToken(localStorage.getItem("access_token"));
+    };
 
     useEffect(() => {
-        graphqlProvider.then((d) => {
+        graphqlProvider(accessToken).then((d) => {
             udpateDataProvider(d);
         });
-    }, []);
+    }, [accessToken]);
     return (
         <>
             {dataProvider != null ?
                 <Admin
                     name="rishadbaniya"
-                    loginPage={LogIn}
+                    loginPage={() => LogIn(onLogin)}
                     dataProvider={dataProvider}
                     authProvider={authProvider}
                     layout={CustomKUCCLayout}
                     lightTheme={lightTheme}
                     darkTheme={darkTheme}
                 >
-                    <Resource name="User" list={UserList} create={UserCreate}></Resource>
+                    <Resource name="User" list={UserList} create={UserCreate} edit={UserEdit}></Resource>
                     <Resource name="Event" list={EventList} edit={EventEdit}></Resource>
                     <Resource name="Routine" list={RoutineList} edit={RoutineEdit} create={RoutineCreate}></Resource>
                 </Admin> : <></>

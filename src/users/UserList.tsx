@@ -5,7 +5,7 @@ import React from 'react';
 const UserList = () => {
     return <Box width={"100%"}>
         <List>
-            <Datagrid>
+            <Datagrid rowClick="edit" >
                 <TextField source="fullName" />
                 <TextField source="primaryEmail" />
             </Datagrid>

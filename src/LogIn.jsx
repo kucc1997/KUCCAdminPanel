@@ -14,7 +14,7 @@ import {useLogin, useNotify, Notification} from 'react-admin';
 import KUCCLogo from './assets/kucc.png'
 
 
-export default function SignIn() {
+export default function SignIn(onLogin) {
     const login = useLogin();
     const notify = useNotify();
 
@@ -35,7 +35,9 @@ export default function SignIn() {
                 password: password,
             });
             // Email is valid
-            login({email, password}).catch((e) => {
+            login({email, password}).then((_) => {
+                onLogin()
+            }).catch((e) => {
                 notify(e, {type: "error"});
             });
 

@@ -3,20 +3,6 @@ import axios from "axios";
 import buildGraphQLProvider from 'ra-data-graphql-simple';
 const GRAPHQL_URI = "http://localhost:8080/graphql";
 
-const uploadImage = (file) => {
-    const formData = new FormData();
-
-    formData.append('file', file);
-    let x = axios.post(uploadUrl, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    }).then((url) => {
-
-    }).catch((err) => {
-
-    })
-}
 
 const myBuildQuery = (fetchType, resource, params) => {
     console.log(`${fetchType} for ${resource}`);
@@ -44,31 +30,30 @@ const myBuildQuery = (fetchType, resource, params) => {
                 }
                 console.log(schedule);
                 const create_routine = gql`
-                fragment dayschedulefields on subjectschedule {
+                fragment DayScheduleFields on SubjectSchedule {
                   subject
-                  starttime
-                  endtime
+                  startTime
+                  endTime
                 }
-
-                mutation createroutine($batch :int!, $faculty :string!, $schedule : inputdayschedule!, $isdraft : boolean!) {
+                mutation createRoutine($batch :Int!, $faculty :Faculty!, $schedule : InputDaySchedule!, $isDraft : Boolean!) {
                   routine {
-                    createroutine(routine: {
+                    createRoutine(routine: {
                       batch : $batch,
                       faculty : $faculty,
                       schedule : $schedule,
-                      isdraft : $isdraft
+                      isDraft : $isDraft
                     }){
                        id
-                       isdraft
+                       isDraft
                        batch
                        faculty
                        schedule{
-                           sun { ...dayschedulefields }
-                           mon { ...dayschedulefields }
-                           tue { ...dayschedulefields }
-                           wed { ...dayschedulefields }
-                           thu { ...dayschedulefields }
-                           fri { ...dayschedulefields }
+                           sun { ...DayScheduleFields }
+                           mon { ...DayScheduleFields }
+                           tue { ...DayScheduleFields }
+                           wed { ...DayScheduleFields }
+                           thu { ...DayScheduleFields }
+                           fri { ...DayScheduleFields }
                        }
                     }
                   }
@@ -91,50 +76,57 @@ const myBuildQuery = (fetchType, resource, params) => {
                 };
             case "User":
                 const create_user = gql`
-                mutation createUser(
-                    $batch :int!, $faculty :string!, $schedule : inputdayschedule!, $isdraft : boolean!) {
-                  user {
-                    createUser(newUser: {
-                      fullName : $fullName,
-                      primaryEmail : $primaryEmail,
-                      password : $password,
-                    }){
-                       id
-                       isdraft
-                       batch
-                       faculty
-                       schedule{
-                           sun { ...dayschedulefields }
-                           mon { ...dayschedulefields }
-                           tue { ...dayschedulefields }
-                           wed { ...dayschedulefields }
-                           thu { ...dayschedulefields }
-                           fri { ...dayschedulefields }
-                       }
-                    }
-                  }
-                }`;
+                   mutation createUser(
+                        $fullName: String!,
+                        $primaryEmail: String!,
+                        $password: String!,
+                        $phoneNumber: String!,
+                        $userRole: UserRole!,
+                        $secondaryEmail: String,
+                        $gender: Gender,
+                        $batch: Int,
+                        $imageUrl: String,
+                        $userType: UserType,
+                        $faculty: Faculty
+                      ) {
+                        user {
+                          createUser(newUser: {
+                            fullName: $fullName,
+                            primaryEmail: $primaryEmail,
+                            password: $password,
+                            phoneNumber: $phoneNumber,
+                            userRole: $userRole,
+                            secondaryEmail: $secondaryEmail,
+                            gender: $gender,
+                            batch: $batch,
+                            imageUrl: $imageUrl,
+                            userType: $userType,
+                            faculty: $faculty,
+                          })
+                        }
+                      }
+                `;
 
-                console.log(data);
                 return {
                     query: create_user,
                     variables: {
                         fullName: data.fullName,
                         primaryEmail: data.primaryEmail,
-                        secondaryEmail: data.secondaryEmail,
-                        phoneNumber: data.phoneNumber,
                         password: data.password,
-                        batch: data.batch,
-                        faculty: data.faculty,
-                        userType: data.userType,
-                        gender: data.gender,
+                        phoneNumber: data.phoneNumber,
                         userRole: data.userRole,
-                        profilePicture: data.profilePicture,
+                        secondaryEmail: data.secondaryEmail,
+                        gender: data.gender,
+                        batch: data.batch,
+                        imageUrl: data.imageUrl,
+                        userType: data.userType,
+                        faculty: data.faculty,
                     },
                     parseResponse: response => {
+                        console.log(response);
                         return {
                             data: {
-                                ...response.data.routine.createRoutine
+                                id: response.data.user.createUser,
                             },
                         };
                     },
@@ -222,7 +214,6 @@ const myBuildQuery = (fetchType, resource, params) => {
     } else if (fetchType === "GET_ONE") {
         switch (resource) {
             case "Routine":
-                console.log(params);
                 const get_one_routine = gql`
                     fragment DayScheduleFields on SubjectSchedule {
                       subject
@@ -258,6 +249,43 @@ const myBuildQuery = (fetchType, resource, params) => {
                         };
                     },
                 };
+            case "User":
+                const get_one_user = gql`
+                  query getUser($id: String, $primaryEmail : String) {
+                     user {
+                       User(
+                          primaryEmail : $primaryEmail,
+                          id : $id,
+                         ){
+                            id
+                            fullName
+                            primaryEmail
+                            secondaryEmail
+                            gender 
+                            phoneNumber
+                            registeredEvents
+                            certificates
+                            batch
+                            imageUrl
+                            userRole
+                            faculty
+                            userType
+
+                        }
+                     }
+                  }
+               `;
+                return {
+                    query: get_one_user,
+                    variables: {
+                        id: params.id,
+                    },
+                    parseResponse: response => {
+                        return {
+                            data: response.data.user.User,
+                        };
+                    },
+                };
         }
     } else if (fetchType === 'UPDATE') {
         let data = params.data;
@@ -282,7 +310,7 @@ const myBuildQuery = (fetchType, resource, params) => {
               startTime
               endTime
             }
-            mutation updateRoutine($id : String!, $batch :Int!, $faculty :String!, $schedule : InputDaySchedule!, $isDraft : Boolean!) {
+            mutation updateRoutine($id : String!, $batch :Int!, $faculty :Faculty!, $schedule : InputDaySchedule!, $isDraft : Boolean!) {
               routine {
                 updateRoutine(id: $id, updatedRoutine: {
                   batch : $batch,
@@ -353,12 +381,20 @@ const myBuildQuery = (fetchType, resource, params) => {
 };
 
 
-const graphqlProvider = buildGraphQLProvider({
-    introspection: false,
-    clientOptions: {
-        uri: GRAPHQL_URI,
-    },
-    buildQuery: (_) => myBuildQuery
-});
+const graphqlProvider = (access_token) => {
+
+    console.log(access_token);
+    return buildGraphQLProvider({
+        introspection: false,
+        clientOptions: {
+            uri: GRAPHQL_URI,
+            headers: {
+                "Authorization": access_token
+            }
+        },
+        buildQuery: (_) => myBuildQuery
+    });
+}
+
 
 export default graphqlProvider;

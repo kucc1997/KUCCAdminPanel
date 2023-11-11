@@ -3,6 +3,7 @@ import {
     Edit,
     useRecordContext,
     TextInput,
+    SelectInput,
     NumberInput,
     SimpleForm,
     BooleanInput,
@@ -18,34 +19,48 @@ const RoutineEdit = (props) => {
 
 const RoutineEditForm = () => {
     const record = useRecordContext();
+
+    const validateRoutineCreation = (values) => {
+        console.log(values);
+        const errors = {};
+
+        if (!values.faculty) {
+            errors["faculty"] = "Missing faculty";
+        }
+
+        if (!values.batch) {
+            errors["batch"] = "Missing batch";
+        }
+
+        if (!values.schedule) {
+            errors["schedule"] = "Missing Schedule";
+        }
+
+        return errors;
+    };
     console.log(record);
 
-    return <SimpleForm>
-
-        <Box display={{xs: 'block', sm: 'flex'}}>
+    return <SimpleForm validate={validateRoutineCreation}>
+        <Box display="flex" alignItems={"center"} width="100%">
             <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
-                <Typography variant="h6" gutterBottom align='left' ml="0.5em" mb={"-0.5em"} fontWeight={"bold"}>
-                    Faculty
-                </Typography>
-                <TextInput
-                    label=""
-                    source="faculty"
-                    isRequired
-                    fullWidth
-                />
+                <Box pr="0.2em" flex={1}>
+                    <NumberInput
+                        max={2030}
+                        min={2000}
+                        label="Batch"
+                        source="batch"
+                        fullWidth
+                    />
+                </Box>
             </Box>
             <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
-                <Typography variant="h6" gutterBottom align='left' ml="0.5em" mb={"-0.5em"} fontWeight={"bold"}>
-                    Batch
-                </Typography>
-                <NumberInput
-                    max={3000}
-                    min={2000}
-                    label=""
-                    source="batch"
-                    isRequired
-                    fullWidth
-                />
+                <Box pl="0.2em" flex={1}>
+                    <SelectInput source="faculty" label="Faculty" choices={[
+                        {id: 'COMPUTERSCIENCE', name: 'Computer Science'},
+                        {id: 'COMPUTERENGINEERING', name: 'Computer Engineering'},
+                        {id: 'ARTIFICIALINTELLIGENCE', name: 'Artificial Intelligence'},
+                    ]} fullWidth />
+                </Box>
             </Box>
         </Box>
         <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
