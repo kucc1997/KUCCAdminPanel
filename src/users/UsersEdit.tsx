@@ -1,65 +1,105 @@
-import {TextField, TextInput, Datagrid, Create, SimpleForm, required, RadioButtonGroupInput, useNotify, NumberInput, Edit} from 'react-admin';
+import {
+    TextInput,
+    Datagrid, Create, SimpleForm, required, RadioButtonGroupInput, useNotify, NumberInput, Edit, useRecordContext, useInput
+} from 'react-admin';
 import {SelectInput} from 'react-admin';
 import {Box} from '@mui/material';
 import {ImageInput, ImageField} from 'react-admin';
-import React, {useEffect, useState} from 'react';
+import React from 'react';
+import Button from '@mui/material/Button';
+import {uploadImage} from '../utils';
+
+const IMAGE_MAX_SIZE = 4000000;
 
 const UserEdit = (props: any) => {
-    return <Edit {...props}>
+    console.log(props);
+
+    const transformData = async (data: any) => {
+        if (data.imageUrl && typeof data.imageUrl !== "string") {
+            data.imageUrl = await uploadImage(data.imageUrl.rawFile);
+        }
+        console.log("HERE");
+        console.log(data);
+        return data;
+    }
+    return <Edit {...props} transform={transformData}>
         <UserEditForm />
     </Edit>
 }
+
+const EditImage = ({source}) => {
+    const {field, formState} = useInput({source});
+
+    const onImageDelete = () => {
+        console.log(formState);
+        field.onChange("DELETED");
+    }
+
+    return <>
+        {
+            // making sure that we have string and not empty one
+            (typeof field.value === "string" && field.value && field.value !== "DELETED") && (
+                <>
+                    <ImageField source="imageUrl" title="title" />
+                    <Button onClick={onImageDelete} color="error">Change or Delete Image</Button>
+                </>
+            )
+        }
+        {
+            (typeof field.value !== "string" || !field.value || field.value === "DELETED") && (
+                <ImageInput source="imageUrl" label="Add Or Change Profile Picture" accept="image/*" maxSize={IMAGE_MAX_SIZE}>
+                    <ImageField source="src" title="title" />
+                </ImageInput>
+            )
+        }
+    </>
+}
 const UserEditForm = () => {
-    // const validateUserCreation = (values: any) => {
-    //     const errors = {};
-    //     if (!values.fullName) {
-    //         errors["fullName"] = "Missing Full Name";
-    //     }
+    const validateUserEdit = (values: any) => {
+        console.log(values);
+        const errors = {};
 
-    //     if (!values.primaryEmail) {
-    //         errors["primaryEmail"] = "Missing Primary Email!";
-    //     }
+        if (!values.fullName) {
+            errors["fullName"] = "Missing Full Name";
+        }
 
-    //     if (!values.password) {
-    //         errors["password"] = "Missing Password!";
-    //     }
+        if (!values.primaryEmail) {
+            errors["primaryEmail"] = "Missing Primary Email!";
+        }
 
-    //     if (!values.phoneNumber) {
-    //         errors["phoneNumber"] = "Missing Phone Number!";
-    //     }
+        if (!values.phoneNumber) {
+            errors["phoneNumber"] = "Missing Phone Number!";
+        }
 
-    //     if (!values.gender) {
-    //         errors["gender"] = "Missing Gender!";
-    //     }
+        if (!values.userType) {
+            errors["userType"] = "Missing User Type!";
+        }
+
+        if (!values.userRole) {
+            errors["userRole"] = "Missing User Role!";
+        } else if (values.userRole === "VERIFIEDUSER" || values.userRole === "MANAGER" || values.userRole === "ADMIN") {
+            if (!values.batch) {
+                errors["batch"] = "Missing User Role!";
+            }
+
+            if (!values.faculty) {
+                errors["faculty"] = "Missing faculty!";
+            }
+
+            if (!values.secondaryEmail) {
+                errors["secondaryEmail"] = "Missing Secondary Email!";
+            }
+
+            if (!values.imageUrl || values.imageUrl === "DELETED") {
+                errors["imageUrl"] = "Missing Profile Picture";
+            }
+        }
+        return errors
+    };
 
 
-    //     if (!values.userType) {
-    //         errors["userType"] = "Missing User Role!";
-    //     }
-
-    //     if (!values.userRole) {
-    //         errors["userRole"] = "Missing User Role!";
-    //     } else if (values.userRole === "Verified User" || values.userRole === "Manager" || values.userRole === "Admin") {
-    //         if (!values.batch) {
-    //             errors["batch"] = "Missing User Role!";
-    //         }
-
-    //         if (!values.faculty) {
-    //             errors["faculty"] = "Missing faculty!";
-    //         }
-
-    //         if (!values.secondaryEmail) {
-    //             errors["secondaryEmail"] = "Missing Secondary Email!";
-    //         }
-
-    //         if (!values.profilePicture) {
-    //             errors["profilePicture"] = "Missing Profile Picture";
-    //         }
-    //     }
-    //     return errors
-    // };
     return <Box width={"100%"}>
-        <SimpleForm>
+        <SimpleForm validate={validateUserEdit} >
             <Box display="flex" flexDirection="column" width="100%">
                 <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
                     <TextInput
@@ -68,7 +108,6 @@ const UserEditForm = () => {
                         source="fullName"
                         isRequired
                         fullWidth
-                        validate={required()}
                     />
                     <TextInput
                         variant='outlined'
@@ -84,7 +123,6 @@ const UserEditForm = () => {
                                 source="primaryEmail"
                                 isRequired
                                 fullWidth
-                                validate={required()}
                             />
                         </Box>
                         <Box ml="0.2em" flex={1}>
@@ -103,15 +141,14 @@ const UserEditForm = () => {
                             source="password"
                             isRequired
                             fullWidth
-                            validate={required()}
                         />
                     </Box>
                 </Box>
                 <Box flex={1} display={"flex"} flexDirection="row">
                     <Box pr="0.2em" flex={1}>
                         <NumberInput
-                            max={3000}
-                            min={2000}
+                            max={2024}
+                            min={2019}
                             label="Batch"
                             source="batch"
                             fullWidth
@@ -120,7 +157,7 @@ const UserEditForm = () => {
                     <Box pl="0.2em" flex={1}>
                         <SelectInput source="faculty" label="Faculty" choices={[
                             {id: 'COMPUTERSCIENCE', name: 'Computer Science'},
-                            {id: 'COMPUTERENGINEER', name: 'Computer Engineering'},
+                            {id: 'COMPUTERENGINEERING', name: 'Computer Engineering'},
                             {id: 'ARTIFICIALINTELLIGENCE', name: 'Artificial Intelligence'},
                         ]} fullWidth />
                     </Box>
@@ -146,25 +183,23 @@ const UserEditForm = () => {
                             {id: 'MALE', name: 'Male'},
                             {id: 'FEMALE', name: 'Female'},
                             {id: 'UNSPECIFIED', name: 'Unspecified'},
-                        ]} validate={required()} fullWidth />
+                        ]} fullWidth />
                     </Box>
                     <Box flex={1}>
                         <RadioButtonGroupInput source="userRole" label="User Role" choices={[
                             {id: 'ADMIN', name: 'Admin'},// IF Admin clicks on this then he would need a secondary email too
                             {id: 'MANAGER', name: 'Manager'},// IF Admin clicks on this then he would need a secondary email too
                             {id: 'VERIFIEDUSER', name: 'Verified User'}, // IF Admin clicks on this then he would need a secondary email too
+                            {id: 'UNDERVERIFICATIONUSER', name: 'Under Verification User'}, // User that has the secondaryEmail verified and has submitted for verification
                             {id: 'UNVERIFIEDUSER', name: 'Unverified User'},
-                        ]} validate={required()} fullWidth />
+                        ]} fullWidth />
                     </Box>
                 </Box>
-                <ImageInput source="imageUrl" label="Profile Picture">
-                    <ImageField source="src" title="title" />
-                </ImageInput>
+                <EditImage source={"imageUrl"} />
             </Box>
         </SimpleForm>
     </Box >
 }
-
 
 export default UserEdit;
 

@@ -136,6 +136,7 @@ const myBuildQuery = (fetchType, resource, params) => {
     else if (fetchType === 'GET_LIST') {
         let page = params.pagination.page;
         let perPage = params.pagination.perPage;
+        let filter = params.filter;
         switch (resource) {
             case "Routine":
                 const get_list_routine = gql`
@@ -146,7 +147,6 @@ const myBuildQuery = (fetchType, resource, params) => {
                             isDraft
                             batch
                             faculty
-
                          }
                       }
                    }
@@ -163,17 +163,21 @@ const myBuildQuery = (fetchType, resource, params) => {
                 };
             case "Event":
                 const get_list_event = gql`
-                   query all${resource}s {
-                      all${resource}s {
-                        title
-                        date
-                        id
-                        registrants
-                        noOfRegistrants
-                        categories
-                        location
-                        description
-                      }
+                    query allEvents($page : Int, $perPage : Int, $filter : FilterEvent){
+                        event{
+                            allEvents(page : $page, perPage : $perPage, filter : $filter){
+                              count
+                              data {
+                                 id
+                                 date
+                                 title
+                                 location
+                                 categories
+                                 noOfRegistrants
+                                 description
+                                }
+                            }   
+                        } 
                    }
               `;
                 return {
@@ -182,31 +186,39 @@ const myBuildQuery = (fetchType, resource, params) => {
                     parseResponse: response => {
                         console.log(response);
                         return {
-                            data: response.data[`all${resource}s`],
-                            total: response.data[`all${resource}s`].length,
+                            data: response.data.event.allEvents.data,
+                            total: response.data.event.allEvents.count,
                         };
                     },
                 };
             case "User":
                 const get_list_user = gql`
-                    query allUsers($page : Int, $perPage : Int){
+                query allUsers($page : Int, $perPage : Int, $filter : FilterUser){
                         user{
-                            allUsers(page : $page, perPage : $perPage) {
-                                id,
-                                fullName,
-                                primaryEmail,
+                            allUsers(page : $page, perPage : $perPage, filter : $filter) {
+                                count
+                                data {
+                                    id
+                                    fullName
+                                    primaryEmail
+                                    userRole
+                                    gender
+                                    batch
+                                    faculty
+                                    userType
+                                }
                             }
                         }
                    }
               `;
                 return {
                     query: get_list_user,
-                    variables: {page, perPage}, // You can add variables if needed
+                    variables: {page, perPage, filter}, // You can add variables if needed
                     parseResponse: response => {
                         console.log(response);
                         return {
-                            data: response.data.user.allUsers,
-                            total: response.data.user.allUsers.length,
+                            data: response.data.user.allUsers.data,
+                            total: response.data.user.allUsers.count,
                         };
                     },
                 };
@@ -289,93 +301,165 @@ const myBuildQuery = (fetchType, resource, params) => {
         }
     } else if (fetchType === 'UPDATE') {
         let data = params.data;
-        let schedule = {
-            ...data.schedule,
-        };
-        delete schedule.__typename;
-        for (let key in schedule) {
-            console.log(key);
-            if (Array.isArray(schedule[key])) {
-                schedule[key] = schedule[key].map((d) => {
-                    delete d.__typename;
-                    return d;
-                });
-            }
-        }
-
-        console.log(schedule);
-        const update_routine = gql`
-            fragment DayScheduleFields on SubjectSchedule {
-              subject
-              startTime
-              endTime
-            }
-            mutation updateRoutine($id : String!, $batch :Int!, $faculty :Faculty!, $schedule : InputDaySchedule!, $isDraft : Boolean!) {
-              routine {
-                updateRoutine(id: $id, updatedRoutine: {
-                  batch : $batch,
-                  isDraft : $isDraft,
-                  faculty : $faculty,
-                  schedule : $schedule
-                }){
-                   id
-                   batch
-                   isDraft
-                   faculty
-                   schedule{
-                       sun { ...DayScheduleFields }
-                       mon { ...DayScheduleFields }
-                       tue { ...DayScheduleFields }
-                       wed { ...DayScheduleFields }
-                       thu { ...DayScheduleFields }
-                       fri { ...DayScheduleFields }
-                   }
-                }
-              }
-            }`;
-
-        return {
-            query: update_routine,
-            variables: {
-                id: params.data.id,
-                batch: params.data.batch,
-                faculty: params.data.faculty,
-                isDraft: params.data.isDraft,
-                schedule: schedule
-            }, // You can add variables if needed
-            parseResponse: response => {
-                console.log(response);
-                return {
-                    data: {
-                        ...response.data.routine.updateRoutine
-                    },
-                };
-            },
-        };
-    } else if (fetchType === 'DELETE') {
         switch (resource) {
             case "Routine":
-                const delete_mutation = gql`
-                    mutation deleteRoutine($id: String!) {
-                        routine{
-                            delete${resource}(id: $id)
-                        }
+                let schedule = {
+                    ...data.schedule,
+                };
+                delete schedule.__typename;
+                for (let key in schedule) {
+                    console.log(key);
+                    if (Array.isArray(schedule[key])) {
+                        schedule[key] = schedule[key].map((d) => {
+                            delete d.__typename;
+                            return d;
+                        });
                     }
-                `;
+                }
+
+                const update_routine = gql`
+                     fragment DayScheduleFields on SubjectSchedule {
+                       subject
+                       startTime
+                       endTime
+                     }
+                     mutation updateRoutine(
+                            $id : String!,
+                            $batch :Int!,
+                            $faculty :Faculty!,
+                            $schedule : InputDaySchedule!,
+                            $isDraft : Boolean!) {
+                            routine {
+                              updateRoutine(id: $id, updatedRoutine: {
+                                batch : $batch,
+                                isDraft : $isDraft,
+                                faculty : $faculty,
+                                schedule : $schedule
+                              }){
+                                 id
+                                 batch
+                                 isDraft
+                                 faculty
+                                 schedule{
+                                     sun { ...DayScheduleFields }
+                                     mon { ...DayScheduleFields }
+                                     tue { ...DayScheduleFields }
+                                     wed { ...DayScheduleFields }
+                                     thu { ...DayScheduleFields }
+                                     fri { ...DayScheduleFields }
+                                 }
+                              }
+                            }
+                     }`;
+
                 return {
-                    query: delete_mutation,
-                    variables: {id: params.id},
+                    query: update_routine,
+                    variables: {
+                        id: params.data.id,
+                        batch: params.data.batch,
+                        faculty: params.data.faculty,
+                        isDraft: params.data.isDraft,
+                        schedule: schedule
+                    }, // You can add variables if needed
                     parseResponse: response => {
-                        if (response.data.routine.deleteRoutine > 0) {
-                            return {data: {id: params.id}};
-                        }
-                        throw new Error(`Could not delete ${resource}`);
+                        console.log(response);
+                        return {
+                            data: {
+                                ...response.data.routine.updateRoutine
+                            },
+                        };
+                    },
+                };
+            case "User":
+                console.log(params);
+                const update_user = gql`
+                        mutation updateUser(
+                             $id : String!,
+                             $fullName: String,
+                             $primaryEmail: String!,
+                             $password: String,
+                             $secondaryEmail: String,
+                             $gender: Gender,
+                             $phoneNumber: String,
+                             $registeredEvents : [String!]
+                             $certificates : [String!]
+                             $batch: Int,
+                             $imageUrl: String,
+                             $userRole: UserRole,
+                             $faculty: Faculty
+                             $userType: UserType,
+                           ) {
+                             user {
+                               updateUser(
+                               id : $id
+                               updatedUser: {
+                                 fullName: $fullName,
+                                 primaryEmail: $primaryEmail,
+                                 password: $password,
+                                 secondaryEmail: $secondaryEmail,
+                                 gender: $gender,
+                                 phoneNumber: $phoneNumber,
+                                 registeredEvents : $registeredEvents,
+                                 certificates : $certificates,
+                                 batch: $batch,
+                                 imageUrl: $imageUrl,
+                                 userRole: $userRole,
+                                 faculty: $faculty,
+                                 userType: $userType,
+                               })
+                             }
+                           }
+                     `;
+
+                return {
+                    query: update_user,
+                    variables: {
+                        id: params.id,
+                        fullName: data.fullName,
+                        primaryEmail: data.primaryEmail,
+                        password: data.password,
+                        secondaryEmail: data.secondaryEmail,
+                        gender: data.gender,
+                        phoneNumber: data.phoneNumber,
+                        registeredEvents: data.registeredEvents,
+                        certificates: data.certificates,
+                        batch: data.batch,
+                        imageUrl: data.imageUrl,
+                        userRole: data.userRole,
+                        faculty: data.faculty,
+                        userType: data.userType,
+                    },
+                    parseResponse: response => {
+                        console.log(data);
+                        console.log(response);
+                        return {
+                            data
+                        };
                     },
                 };
         }
 
-    } else if (fetchType === 'GET_ONE') {
-        console.log('I AM HERE TO GET ONE');
+    } else if (fetchType === 'DELETE') {
+        let id = params.id;
+        const delete_mutation = gql`
+         mutation delete${resource}($id: String!) {
+                ${resource.toLowerCase()}{
+                    delete${resource}(id: $id)
+                }
+            }
+        `;
+        return {
+            query: delete_mutation,
+            variables: {
+                id
+            },
+            parseResponse: response => {
+                if (response.data[resource.toLowerCase()][`delete${resource}`] > 0) {
+                    return {data: {id: params.id}};
+                }
+                throw new Error(`Could not delete ${resource}`);
+            },
+        };
     }
     return null; // Return null for unsupported fetch types
 };

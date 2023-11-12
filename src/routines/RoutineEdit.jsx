@@ -45,8 +45,8 @@ const RoutineEditForm = () => {
             <Box flex={1} ml={{xs: 0, sm: '0.5em'}} mr={{xs: 0, sm: '0.5em'}}>
                 <Box pr="0.2em" flex={1}>
                     <NumberInput
-                        max={2030}
-                        min={2000}
+                        max={2024}
+                        min={2019}
                         label="Batch"
                         source="batch"
                         fullWidth

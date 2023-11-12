@@ -20,6 +20,7 @@ import UserCreate from './users/UserCreate';
 import authProvider from './authProvider';
 import LogIn from './LogIn';
 import UserEdit from './users/UsersEdit';
+import EventCreate from './events/EventCreate';
 
 
 
@@ -66,7 +67,7 @@ const App = () => {
                     darkTheme={darkTheme}
                 >
                     <Resource name="User" list={UserList} create={UserCreate} edit={UserEdit}></Resource>
-                    <Resource name="Event" list={EventList} edit={EventEdit}></Resource>
+                    <Resource name="Event" list={EventList} create={EventCreate} edit={EventEdit}></Resource>
                     <Resource name="Routine" list={RoutineList} edit={RoutineEdit} create={RoutineCreate}></Resource>
                 </Admin> : <></>
             }

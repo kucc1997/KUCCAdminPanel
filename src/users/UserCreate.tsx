@@ -3,40 +3,8 @@ import {SelectInput} from 'react-admin';
 import {Box} from '@mui/material';
 import {ImageInput, ImageField} from 'react-admin';
 import React, {useEffect, useState} from 'react';
-import axios from "axios";
+import {uploadImage} from '../utils';
 
-const uploadImage = (file: File) => {
-    return new Promise((res, rej) => {
-
-        let access_token = localStorage.getItem("access_token");
-        if (!access_token) {
-            console.error("Access token not available");
-            rej("Access token not available");
-        }
-
-        console.log("The downloaded file is ");
-        console.log(file);
-        let upload_url = "http://localhost:8080/upload";
-        let file_name = file.name;
-        const formData = new FormData();
-        formData.append('file', file);
-
-        console.log("The file is ");
-        console.log(file);
-
-        axios.post(upload_url, formData, {
-            headers: {
-                "Authorization": access_token,
-                "Content-Type": 'multipart/form-data',
-                "Content-Disposition": `attachment; filename="${file_name}"`
-            },
-        }).then((d) => {
-            res(d.data);
-        }).catch((e) => {
-            rej(e);
-        });
-    });
-}
 const UserCreate = () => {
     const validateUserCreation = (values: any) => {
         const errors = {};
@@ -146,8 +114,8 @@ const UserCreate = () => {
                     <Box flex={1} display={"flex"} flexDirection="row">
                         <Box pr="0.2em" flex={1}>
                             <NumberInput
-                                max={2030}
-                                min={2000}
+                                max={2024}
+                                min={2019}
                                 label="Batch"
                                 source="batch"
                                 fullWidth
@@ -186,10 +154,12 @@ const UserCreate = () => {
                         </Box>
                         <Box flex={1}>
                             <RadioButtonGroupInput source="userRole" label="User Role" choices={[
-                                {id: 'ADMIN', name: 'Admin'},// IF Admin clicks on this then he would need a secondary email too
-                                {id: 'MANAGER', name: 'Manager'},// IF Admin clicks on this then he would need a secondary email too
-                                {id: 'VERIFIEDUSER', name: 'Verified User'}, // IF Admin clicks on this then he would need a secondary email too
+                                {id: 'ADMIN', name: 'Admin'},// If Admin clicks on this then he would need a secondary email too
+                                {id: 'MANAGER', name: 'Manager'},// If Admin clicks on this then he would need a secondary email too
+                                {id: 'VERIFIEDUSER', name: 'Verified User'}, // If Admin clicks on this then he would need a secondary email too
+                                {id: 'UNDERVERIFICATIONUSER', name: 'Under Verification User'}, // User that has the secondaryEmail verified and has submitted for verification
                                 {id: 'UNVERIFIEDUSER', name: 'Unverified User'},
+
                             ]} validate={required()} fullWidth />
                         </Box>
                     </Box>

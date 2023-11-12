@@ -75,3 +75,7 @@ button:focus-visible {
     height: 4em !important; 
     border-bottom: 0 !important;
 }
+
+form{
+    width : 100%
+}

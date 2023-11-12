@@ -96,7 +96,7 @@ const EventEditForm = () => {
                     />
                 </TabbedForm.Tab>
                 <TabbedForm.Tab label="Registrants" >
-                    {registrants.map((d, i) => {
+                    {registrants.map((d: any, i: number) => {
                         return <Box p={"0.4em"}>
                             <Chip label={`${i + 1} - ${d}`} key={i} />
                         </Box>
@@ -111,19 +111,4 @@ const EventEditForm = () => {
     </Box>
 }
 
-//<DateInput
-//source="birthday"
-//fullWidth
-//helperText={false}
-///>
-//<TextInput
-//source="title"
-//isRequired
-//fullWidth
-///>
-//<ArrayInput source='registrants'>
-//<SimpleFormIterator inline>
-//<TextInput label="Registrant" />
-//</SimpleFormIterator>
-//</ArrayInput>
 export default EventEdit;
