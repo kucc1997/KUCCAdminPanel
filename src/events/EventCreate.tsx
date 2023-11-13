@@ -8,27 +8,56 @@ import {
     SimpleFormIterator,
     BooleanInput,
     Create,
+    useInput
 } from 'react-admin';
 import {Box, Typography} from '@mui/material';
-import Chip from '@mui/material/Chip';
 import MDEditor from '@uiw/react-md-editor';
+import {format} from 'date-fns'
 
+const DATE_FORMAT = "yyyy:MM:dd'T'HH:mm:ss"
+
+const transformEventSubmissionData = (data: any) => {
+    data.categories = data.categories.map((d: any) => d.category);
+    data.date = format(data.date, DATE_FORMAT);
+    return data;
+}
 const EventCreate = () => {
-    const transformData = (data: any) => {
-        data.categories = data.categories.map((d: any) => d.category);
-    }
-    return <Create transform={transformData}>
+
+    return <Create transform={transformEventSubmissionData}>
         <EventCreateForm />
     </Create>
 }
 
-
 const EventCreateForm = () => {
-    let registrants = [];
+    const validateEventCreation = (values: any) => {
+        console.log(values);
+        const errors = {};
 
-    console.log(registrants);
+        if (!values.title) {
+            errors["title"] = "Missing title";
+        }
+
+        if (!values.location) {
+            errors["location"] = "Missing location";
+        }
+
+        if (!values.categories || Object.entries(values.categories).length === 0) {
+            errors["categories"] = "Missing categories";
+        }
+
+        if (!values.description || values.length === 0) {
+            errors["description"] = "Missing description";
+        }
+
+        if (!values.date) {
+            errors["date"] = "Missing Date and Time";
+        }
+
+        return errors;
+    };
+
     return <Box pt={"1em"} pl={"0.4em"} display="flex" width={"100%"}>
-        <TabbedForm warnWhenUnsavedChanges={true} style={{"width": "100%"}}>
+        <TabbedForm warnWhenUnsavedChanges={true} style={{"width": "100%"}} validate={validateEventCreation}>
             <TabbedForm.Tab label="summary">
                 <Box flex={1} width="100%">
                     <TextInput
@@ -75,37 +104,28 @@ const EventCreateForm = () => {
                 <Box></Box>
             </TabbedForm.Tab >
             <TabbedForm.Tab label="description">
-                <MarkdownDescription />
-            </TabbedForm.Tab>
-            <TabbedForm.Tab label="Registrants" >
-                {registrants.map((d, i) => {
-                    return <Box p={"0.4em"}>
-                        <Chip label={`${i + 1} - ${d}`} key={i} />
-                    </Box>
-                })}
-                <Typography variant="h6" gutterBottom align='left' ml="0.5em" fontWeight={"bold"} textAlign={"center"}>
-                    {registrants.length} registrants
-                </Typography>
+                <MarkdownDescription source="description" />
             </TabbedForm.Tab>
         </TabbedForm >
     </Box>
 }
 
-const MarkdownDescription = () => {
-    const [value, setValue] = React.useState("## About Event");
+const MarkdownDescription = ({source}) => {
+    const {field} = useInput({source});
+
     const editorStyle = {
         width: "100%",
         height: "700px",
-        backgroundColor: "#f0f0f0", // Set your desired background color here
     };
     const onValueChange = (e: any) => {
-        setValue(e);
+        field.onChange(e)
     }
 
-    return (<div className="container" style={editorStyle}>
-        <MDEditor value={value} onChange={onValueChange} height="100%" hideToolbar={true} />
+    return (<div className="container" style={editorStyle} data-color-mode="dark">
+        <MDEditor value={field.value} onChange={onValueChange} height="100%" hideToolbar={true} />
     </div>)
 }
 
+export {DATE_FORMAT, transformEventSubmissionData}
 export default EventCreate;
 

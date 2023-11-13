@@ -131,6 +131,55 @@ const myBuildQuery = (fetchType, resource, params) => {
                         };
                     },
                 };
+            case "Event":
+                const create_event = gql`
+                   mutation createEvent(
+                        $date: String!,
+                        $title: String!,
+                        $location: String!,
+                        $categories: [String!]!,
+                        $description: String!,
+                        $isDraft: Boolean!,
+                      ) {
+                        event {
+                          createEvent(inputEvent: {
+                            date: $date,
+                            title: $title,
+                            location: $location,
+                            categories: $categories,
+                            description: $description,
+                            isDraft: $isDraft,
+                          }){
+                            id
+                            date
+                            title
+                            location
+                            categories
+                            noOfRegistrants
+                            registrants
+                            description
+                            isDraft
+                          }
+                        }
+                      }`;
+                return {
+                    query: create_event,
+                    variables: {
+                        title: data.title,
+                        location: data.location,
+                        categories: data.categories,
+                        description: data.description,
+                        date: data.date,
+                        isDraft: data.isDraft
+                    },
+                    parseResponse: response => {
+                        return {
+                            data: {
+                                ...response.data.event.createEvent
+                            },
+                        };
+                    },
+                };
         }
     }
     else if (fetchType === 'GET_LIST') {
@@ -175,6 +224,7 @@ const myBuildQuery = (fetchType, resource, params) => {
                                  categories
                                  noOfRegistrants
                                  description
+                                 isDraft
                                 }
                             }   
                         } 
@@ -295,6 +345,36 @@ const myBuildQuery = (fetchType, resource, params) => {
                     parseResponse: response => {
                         return {
                             data: response.data.user.User,
+                        };
+                    },
+                };
+            case "Event":
+                const get_one_event = gql`
+                  query getEvent($id: String!) {
+                     event{
+                       Event(
+                          id : $id,
+                         ){
+                            id
+                            date
+                            title
+                            location
+                            categories
+                            noOfRegistrants
+                            registrants
+                            description
+                        }
+                     }
+                  }
+               `;
+                return {
+                    query: get_one_event,
+                    variables: {
+                        id: params.id,
+                    },
+                    parseResponse: response => {
+                        return {
+                            data: response.data.event.Event,
                         };
                     },
                 };
@@ -434,6 +514,62 @@ const myBuildQuery = (fetchType, resource, params) => {
                         console.log(response);
                         return {
                             data
+                        };
+                    },
+                };
+            case "Event":
+                const update_event = gql`
+                        mutation updateEvent(
+                            $id : String!,
+                            $date: String!,
+                            $title: String!,
+                            $location: String!,
+                            $categories: [String!]!,
+                            $description: String!,
+                            $isDraft: Boolean!,
+                           ){
+                             event {
+                               updateEvent(
+                               id : $id
+                               updatedEvent: {
+                                    date : $date,
+                                    title : $title,
+                                    location : $location,
+                                    description : $description,
+                                    categories : $categories
+                                    isDraft : $isDraft,
+                               }){
+                                    id
+                                    date
+                                    title
+                                    location
+                                    categories
+                                    noOfRegistrants
+                                    description
+                                    isDraft
+                                }
+                             }
+                           }
+                     `;
+
+                return {
+                    query: update_event,
+                    variables: {
+                        id: params.id,
+                        title: data.title,
+                        location: data.location,
+                        categories: data.categories,
+                        description: data.description,
+                        date: data.date,
+                        isDraft: data.isDraft
+                    },
+                    parseResponse: response => {
+                        console.log(data);
+                        console.log(response);
+                        return {
+                            data: {
+                                ...response.data.event.updateEvent
+                            }
                         };
                     },
                 };
